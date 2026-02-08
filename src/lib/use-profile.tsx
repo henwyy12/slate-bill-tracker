@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import type { UserProfile } from "./types";
+import { supabase } from "./supabase";
+import { useAuth } from "./use-auth";
 export { CURRENCIES } from "./currencies";
 
 const STORAGE_KEY = "slate-profile";
@@ -33,7 +35,7 @@ function loadProfile(): UserProfile | null {
   }
 }
 
-function saveProfile(profile: UserProfile | null) {
+function saveProfileLocal(profile: UserProfile | null) {
   if (profile) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
   } else {
@@ -42,22 +44,73 @@ function saveProfile(profile: UserProfile | null) {
 }
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
+  // Load profile — from Supabase if signed in, localStorage otherwise
   useEffect(() => {
-    setProfileState(loadProfile());
-    setHydrated(true);
-  }, []);
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            const p: UserProfile = {
+              name: data.name,
+              country: data.country ?? "",
+              currencySymbol: data.currency_symbol ?? "PHP",
+              locale: data.locale ?? "en-PH",
+              email: user.email,
+            };
+            setProfileState(p);
+            saveProfileLocal(p);
+          } else {
+            // No remote profile — use local if exists
+            const local = loadProfile();
+            if (local) {
+              setProfileState(local);
+              // Push local profile to Supabase
+              supabase.from("profiles").upsert({
+                id: user.id,
+                name: local.name,
+                country: local.country,
+                currency_symbol: local.currencySymbol,
+                locale: local.locale,
+              });
+            }
+          }
+          setHydrated(true);
+        });
+    } else {
+      setProfileState(loadProfile());
+      setHydrated(true);
+    }
+  }, [user]);
 
-  const setProfile = useCallback((p: UserProfile) => {
-    setProfileState(p);
-    saveProfile(p);
-  }, []);
+  const setProfile = useCallback(
+    (p: UserProfile) => {
+      setProfileState(p);
+      saveProfileLocal(p);
+
+      if (user) {
+        supabase.from("profiles").upsert({
+          id: user.id,
+          name: p.name,
+          country: p.country,
+          currency_symbol: p.currencySymbol,
+          locale: p.locale,
+        });
+      }
+    },
+    [user]
+  );
 
   const clearProfile = useCallback(() => {
     setProfileState(null);
-    saveProfile(null);
+    saveProfileLocal(null);
   }, []);
 
   const currencySymbol = profile?.currencySymbol ?? "PHP";
