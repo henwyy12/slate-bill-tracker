@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ProfileProvider } from "@/lib/use-profile";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -37,8 +38,10 @@ export default function RootLayout({
       <body
         className={`${geistMono.variable} ${instrumentSerif.variable} antialiased`}
       >
-        {children}
-        <Toaster />
+        <ProfileProvider>
+          {children}
+          <Toaster />
+        </ProfileProvider>
       </body>
     </html>
   );

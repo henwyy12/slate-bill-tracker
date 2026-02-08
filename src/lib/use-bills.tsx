@@ -17,6 +17,7 @@ const UPCOMING_DAYS = 7;
 interface BillsContextValue {
   bills: Bill[];
   addBill: (bill: Omit<Bill, "id">) => void;
+  updateBill: (id: string, updates: Partial<Omit<Bill, "id">>) => void;
   togglePaid: (id: string) => void;
   deleteBill: (id: string) => void;
   unpaidBills: Bill[];
@@ -61,9 +62,26 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
     setBills((prev) => [...prev, newBill]);
   }, []);
 
+  const updateBill = useCallback(
+    (id: string, updates: Partial<Omit<Bill, "id">>) => {
+      setBills((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+      );
+    },
+    [],
+  );
+
   const togglePaid = useCallback((id: string) => {
     setBills((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, isPaid: !b.isPaid } : b)),
+      prev.map((b) =>
+        b.id === id
+          ? {
+              ...b,
+              isPaid: !b.isPaid,
+              paidAt: !b.isPaid ? new Date().toISOString() : undefined,
+            }
+          : b,
+      ),
     );
   }, []);
 
@@ -137,6 +155,7 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
       value={{
         bills,
         addBill,
+        updateBill,
         togglePaid,
         deleteBill,
         unpaidBills,

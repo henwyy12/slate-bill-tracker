@@ -1,14 +1,17 @@
 import { MobileShell } from "@/components/mobile-shell";
 import { AddBillButton } from "@/components/add-bill-button";
 import { BillsProvider } from "@/lib/use-bills";
+import { ProfileGuard } from "@/components/profile-guard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <BillsProvider>
-      <MobileShell>
-        {children}
-        <AddBillButton />
-      </MobileShell>
-    </BillsProvider>
+    <ProfileGuard>
+      <BillsProvider>
+        <MobileShell>
+          {children}
+          <AddBillButton />
+        </MobileShell>
+      </BillsProvider>
+    </ProfileGuard>
   );
 }

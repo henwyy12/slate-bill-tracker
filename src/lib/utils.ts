@@ -23,10 +23,18 @@ export function formatShortDate(dateStr: string): string {
   });
 }
 
-/** Formats a number as Philippine Peso: 1,234.56 */
-export function formatPeso(amount: number): string {
-  return amount.toLocaleString("en-PH", {
+/** Formats a number with locale-aware thousand separators: 1,234.56 */
+export function formatAmount(amount: number, locale = "en-PH"): string {
+  return amount.toLocaleString(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/** Returns a time-based greeting based on browser local time. */
+export function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 18) return "Good afternoon";
+  return "Good evening";
 }

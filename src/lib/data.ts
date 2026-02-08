@@ -3,16 +3,17 @@ import type { BillTag } from "./types";
 // ── Bill Types ────────────────────────────────────────
 
 export const BILL_TYPES: BillTag[] = [
-  { label: "Streaming", emoji: "📺" },
-  { label: "Utilities", emoji: "⚡" },
-  { label: "Telecom", emoji: "📱" },
-  { label: "Insurance", emoji: "🛡️" },
-  { label: "Transport", emoji: "🚗" },
-  { label: "Food", emoji: "🍔" },
-  { label: "Shopping", emoji: "🛍️" },
-  { label: "Loans", emoji: "💳" },
-  { label: "Internet", emoji: "🌐" },
+  // Needs
+  { label: "Rent", emoji: "🏠" },
   { label: "Electricity", emoji: "💡" },
   { label: "Water", emoji: "💧" },
-  { label: "BNPL", emoji: "🧾" },
+  { label: "Internet", emoji: "🌐" },
+  { label: "Phone", emoji: "📱" },
+  { label: "Insurance", emoji: "🛡️" },
+  { label: "Loans", emoji: "💳" },
+  { label: "Car Payment", emoji: "🚗" },
+  { label: "Food", emoji: "🍔" },
+  // Wants
+  { label: "Shopping", emoji: "🛍️" },
+  { label: "Transport", emoji: "🚌" },
 ];
