@@ -90,6 +90,8 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
   body {
     @apply bg-background text-foreground;
@@ -124,4 +126,34 @@
 
 @utility animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(-10%, 10%); }
+  33% { transform: translate(40%, -20%); }
+  66% { transform: translate(20%, 15%); }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(50%, 5%); }
+  33% { transform: translate(10%, -15%); }
+  66% { transform: translate(60%, -5%); }
+}
+
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(30%, -10%); }
+  33% { transform: translate(-5%, 10%); }
+  66% { transform: translate(50%, 20%); }
+}
+
+@keyframes orbFloat4 {
+  0%, 100% { transform: translate(-15%, -5%); }
+  33% { transform: translate(15%, 15%); }
+  66% { transform: translate(-25%, 10%); }
+}
+
+@keyframes orbFloat5 {
+  0%, 100% { transform: translate(10%, 5%); }
+  33% { transform: translate(40%, -10%); }
+  66% { transform: translate(-15%, 15%); }
 }

@@ -8,7 +8,7 @@ import type { Currency } from "@/lib/currencies";
 import { getGreeting } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
-type Step = "name" | "country" | "welcome";
+type Step = "intro" | "name" | "country" | "welcome";
 
 const WELCOME_MESSAGES = [
   "Setting up your experience",
@@ -18,7 +18,7 @@ const WELCOME_MESSAGES = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { profile, setProfile } = useProfile();
-  const [step, setStep] = useState<Step>("name");
+  const [step, setStep] = useState<Step>("intro");
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Currency | null>(null);
@@ -88,7 +88,120 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto min-h-[100dvh] max-w-md bg-background">
       <AnimatePresence mode="wait">
-        {step === "name" ? (
+        {step === "intro" ? (
+          <motion.div
+            key="intro"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6"
+          >
+            {/* Floating gradient orbs — bottom */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div
+                className="absolute rounded-full will-change-transform"
+                style={{
+                  width: 260,
+                  height: 260,
+                  bottom: -40,
+                  left: -30,
+                  background: "#c9a87c",
+                  opacity: 0.5,
+                  filter: "blur(40px)",
+                  animation: "orbFloat1 8s ease-in-out infinite",
+                }}
+              />
+              <div
+                className="absolute rounded-full will-change-transform"
+                style={{
+                  width: 200,
+                  height: 200,
+                  bottom: -20,
+                  right: -20,
+                  background: "#d4a08a",
+                  opacity: 0.45,
+                  filter: "blur(40px)",
+                  animation: "orbFloat2 10s ease-in-out infinite",
+                }}
+              />
+              <div
+                className="absolute rounded-full will-change-transform"
+                style={{
+                  width: 160,
+                  height: 160,
+                  bottom: 40,
+                  left: "35%",
+                  background: "#b8977a",
+                  opacity: 0.35,
+                  filter: "blur(36px)",
+                  animation: "orbFloat3 12s ease-in-out infinite",
+                }}
+              />
+              {/* Cool tones */}
+              <div
+                className="absolute rounded-full will-change-transform"
+                style={{
+                  width: 220,
+                  height: 220,
+                  bottom: 20,
+                  right: 10,
+                  background: "#7b8fa8",
+                  opacity: 0.35,
+                  filter: "blur(44px)",
+                  animation: "orbFloat4 11s ease-in-out infinite",
+                }}
+              />
+              <div
+                className="absolute rounded-full will-change-transform"
+                style={{
+                  width: 180,
+                  height: 180,
+                  bottom: -10,
+                  left: "20%",
+                  background: "#9a89b0",
+                  opacity: 0.3,
+                  filter: "blur(42px)",
+                  animation: "orbFloat5 13s ease-in-out infinite",
+                }}
+              />
+            </div>
+
+            <div className="relative text-center">
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                className="font-heading text-7xl"
+              >
+                Slate
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+                className="mt-3 text-sm text-muted-foreground"
+              >
+                Billing, simplified.
+              </motion.p>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 1.2, ease: "easeOut" }}
+              className="fixed inset-x-0 bottom-0 mx-auto max-w-md px-6 pb-10"
+            >
+              <button
+                onClick={() => setStep("name")}
+                className="w-full rounded-2xl bg-primary py-4 text-sm font-medium text-primary-foreground transition-transform active:scale-[0.98]"
+              >
+                Get started
+              </button>
+            </motion.div>
+          </motion.div>
+
+        ) : step === "name" ? (
           <motion.div
             key="name"
             initial={{ opacity: 0, y: 20 }}

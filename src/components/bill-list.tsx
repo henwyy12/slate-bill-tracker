@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BillCard } from "@/components/bill-card";
 import { useBills } from "@/lib/use-bills";
 import { formatAmount } from "@/lib/utils";
@@ -55,11 +55,27 @@ function groupByMonth(bills: Bill[]): MonthGroup[] {
 
 export function BillList() {
   const [activeTab, setActiveTab] = useState<Tab>("unpaid");
-  const [selectedMonth, setSelectedMonth] = useState<MonthGroup | null>(null);
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(null);
   const { unpaidBills, paidBills } = useBills();
-  const { currencySymbol, locale } = useProfile();
+  const { currencySymbol } = useProfile();
 
   const monthGroups = useMemo(() => groupByMonth(paidBills), [paidBills]);
+
+  // Live data for the selected month — auto-nulls when bills are gone
+  const selectedMonth = useMemo(
+    () => monthGroups.find((g) => g.key === selectedMonthKey) ?? null,
+    [monthGroups, selectedMonthKey],
+  );
+
+  // Close drawer when a bill is deleted or toggled out of the month
+  const prevCount = useRef(0);
+  useEffect(() => {
+    const count = selectedMonth?.bills.length ?? 0;
+    if (prevCount.current > 0 && count < prevCount.current) {
+      setSelectedMonthKey(null);
+    }
+    prevCount.current = count;
+  }, [selectedMonth?.bills.length]);
 
   return (
     <div className="py-4">
@@ -108,7 +124,7 @@ export function BillList() {
               <div key={group.key} className="mb-6">
                 {/* Month header — tappable */}
                 <button
-                  onClick={() => setSelectedMonth(group)}
+                  onClick={() => setSelectedMonthKey(group.key)}
                   className="mb-3 flex w-full items-center justify-between text-left"
                 >
                   <h3 className="text-2xl font-heading">{group.label}</h3>
@@ -131,41 +147,43 @@ export function BillList() {
         )}
       </div>
 
-      {/* Month detail drawer */}
-      {selectedMonth && (
-        <Drawer
-          open={!!selectedMonth}
-          onOpenChange={(open) => {
-            if (!open) setSelectedMonth(null);
-          }}
-        >
-          <DrawerContent>
-            <DrawerHeader className="pb-0">
-              <DrawerTitle className="text-center text-2xl font-heading">
-                {selectedMonth.label}
-              </DrawerTitle>
-              <DrawerDescription className="text-center">
-                {selectedMonth.bills.length} bill
-                {selectedMonth.bills.length !== 1 && "s"} paid
-              </DrawerDescription>
-            </DrawerHeader>
+      {/* Month detail drawer — always mounted so Vaul can animate closed */}
+      <Drawer
+        open={!!selectedMonth}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMonthKey(null);
+        }}
+      >
+        <DrawerContent>
+          {selectedMonth && (
+            <>
+              <DrawerHeader className="pb-0">
+                <DrawerTitle className="text-center text-2xl font-heading">
+                  {selectedMonth.label}
+                </DrawerTitle>
+                <DrawerDescription className="text-center">
+                  {selectedMonth.bills.length} bill
+                  {selectedMonth.bills.length !== 1 && "s"} paid
+                </DrawerDescription>
+              </DrawerHeader>
 
-            <div className="px-6 pb-2 pt-2">
-              <p className="text-center font-heading text-4xl">
-                {currencySymbol}{formatAmount(selectedMonth.total, locale)}
-              </p>
-            </div>
-
-            <div className="max-h-[50vh] overflow-y-auto px-5 pb-6 pt-3">
-              <div className="space-y-3">
-                {selectedMonth.bills.map((bill) => (
-                  <BillCard key={bill.id} bill={bill} />
-                ))}
+              <div className="px-6 pb-2 pt-2">
+                <p className="text-center font-heading text-4xl">
+                  {currencySymbol} {formatAmount(selectedMonth.total)}
+                </p>
               </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      )}
+
+              <div className="max-h-[50vh] overflow-y-auto px-5 pb-10 pt-3">
+                <div className="space-y-3">
+                  {selectedMonth.bills.map((bill) => (
+                    <BillCard key={bill.id} bill={bill} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

@@ -8,7 +8,6 @@ export interface UserProfile {
   country: string;
   currencySymbol: string;
   locale: string;
-  email?: string;
 }
 
 export interface Bill {

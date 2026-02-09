@@ -23,9 +23,9 @@ export function formatShortDate(dateStr: string): string {
   });
 }
 
-/** Formats a number with locale-aware thousand separators: 1,234.56 */
-export function formatAmount(amount: number, locale = "en-PH"): string {
-  return amount.toLocaleString(locale, {
+/** Formats a number with thousand separators: 1,234.56 */
+export function formatAmount(amount: number): string {
+  return amount.toLocaleString("en", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

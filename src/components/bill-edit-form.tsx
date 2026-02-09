@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { Bill, BillTag } from "@/lib/types";
 import { useBills } from "@/lib/use-bills";
-import { BILL_TYPES } from "@/lib/data";
+import { BILL_TYPES, getNotesPlaceholder } from "@/lib/data";
 import { EMOJIS, EMOJI_CATEGORIES } from "@/lib/emoji-data";
 import { useProfile } from "@/lib/use-profile";
 import { CalendarDays, ChevronRight, Search, Plus } from "lucide-react";
@@ -29,7 +29,7 @@ interface BillEditFormProps {
 
 export function BillEditForm({ bill, onDone }: BillEditFormProps) {
   const { updateBill } = useBills();
-  const { currencySymbol, locale } = useProfile();
+  const { currencySymbol } = useProfile();
 
   const [editName, setEditName] = useState(bill.name);
   const [editAmount, setEditAmount] = useState(bill.amount.toFixed(2));
@@ -114,7 +114,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
         </DrawerTitle>
       </DrawerHeader>
 
-      <div className="space-y-5 px-5 pb-2">
+      <div className="max-h-[50vh] space-y-5 overflow-y-auto px-5 pb-2">
         {/* Amount */}
         <div className="flex flex-col items-center">
           <p className="mb-2 text-sm text-muted-foreground">Amount</p>
@@ -130,7 +130,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                 if (!editAmount) return "";
                 const [int, dec] = editAmount.split(".");
                 const formatted = int
-                  ? Number(int).toLocaleString(locale)
+                  ? Number(int).toLocaleString("en")
                   : "0";
                 return dec !== undefined ? `${formatted}.${dec}` : formatted;
               })()}
@@ -173,7 +173,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
             <button
               type="button"
               onClick={() => setDateDrawerOpen(true)}
-              className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-2.5 text-sm transition-colors hover:bg-secondary/50"
+              className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-3.5 text-sm transition-colors hover:bg-secondary/50"
             >
               {editDueDate ? (
                 <span>{formatDisplayDate(editDueDate)}</span>
@@ -188,11 +188,13 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                   Due Date
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="flex flex-col items-center px-4 pb-6">
+              <div className="flex flex-col items-center px-4 pb-10">
                 <Calendar
                   mode="single"
+                  required
                   selected={editDueDate}
                   onSelect={handleSelectDate}
+                  defaultMonth={editDueDate}
                   className="w-full bg-transparent [--cell-size:--spacing(11)]"
                   classNames={{
                     month_caption:
@@ -208,7 +210,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="mt-2 w-full py-2 text-center text-sm text-destructive"
+                    className="mt-2 w-full py-3 text-center text-sm text-destructive"
                   >
                     Cancel
                   </button>
@@ -225,7 +227,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
             <button
               type="button"
               onClick={() => setTypeDrawerOpen(true)}
-              className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-2.5 text-sm transition-colors hover:bg-secondary/50"
+              className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-3.5 text-sm transition-colors hover:bg-secondary/50"
             >
               <span className="flex items-center gap-2.5">
                 <span className="flex size-8 items-center justify-center rounded-full bg-secondary text-base">
@@ -241,7 +243,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                   Select Bill Type
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-6">
+              <div className="px-4 pb-10">
                 <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
                   {BILL_TYPES.map((type) => {
                     const isActive = editBillType.label === type.label;
@@ -281,7 +283,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="mt-4 w-full py-2 text-center text-sm text-destructive"
+                    className="mt-4 w-full py-3 text-center text-sm text-destructive"
                   >
                     Cancel
                   </button>
@@ -298,7 +300,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                   Custom Bill Type
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-6">
+              <div className="px-4 pb-10">
                 <div className="mb-4 flex flex-col items-center">
                   <button
                     type="button"
@@ -411,7 +413,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                 <button
                   type="button"
                   onClick={() => setCustomDrawerOpen(false)}
-                  className="mt-3 w-full py-2 text-center text-sm text-destructive"
+                  className="mt-3 w-full py-3 text-center text-sm text-destructive"
                 >
                   Cancel
                 </button>
@@ -441,7 +443,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
             </span>
           </Label>
           <Textarea
-            placeholder="Any reminders about this bill..."
+            placeholder={getNotesPlaceholder(editBillType.label)}
             rows={3}
             value={editNotes}
             onChange={(e) => setEditNotes(e.target.value)}
@@ -450,10 +452,10 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
       </div>
 
       <DrawerFooter>
-        <Button onClick={handleSave} className="w-full">
+        <Button size="lg" onClick={handleSave} className="w-full">
           Save Changes
         </Button>
-        <Button variant="outline" onClick={onDone} className="w-full">
+        <Button size="lg" variant="outline" onClick={onDone} className="w-full">
           Cancel
         </Button>
       </DrawerFooter>

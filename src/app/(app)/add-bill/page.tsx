@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarDays, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,24 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { BILL_TYPES } from "@/lib/data";
+import { BILL_TYPES, getNotesPlaceholder } from "@/lib/data";
 import { EMOJIS, EMOJI_CATEGORIES } from "@/lib/emoji-data";
 import { useBills } from "@/lib/use-bills";
-import { useProfile } from "@/lib/use-profile";
+import { useProfile, FREE_BILL_LIMIT } from "@/lib/use-profile";
 import type { BillTag } from "@/lib/types";
 import { toast } from "sonner";
 
 export default function AddBillPage() {
   const router = useRouter();
-  const { addBill } = useBills();
-  const { currencySymbol, locale } = useProfile();
+  const { addBill, bills } = useBills();
+  const { currencySymbol, isPro } = useProfile();
+
+  // Redirect to upgrade if at free limit
+  useEffect(() => {
+    if (!isPro && bills.length >= FREE_BILL_LIMIT) {
+      router.replace("/upgrade");
+    }
+  }, [isPro, bills.length, router]);
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -170,7 +177,7 @@ export default function AddBillPage() {
               value={(() => {
                 if (!amount) return "";
                 const [int, dec] = amount.split(".");
-                const formatted = int ? Number(int).toLocaleString(locale) : "0";
+                const formatted = int ? Number(int).toLocaleString("en") : "0";
                 return dec !== undefined ? `${formatted}.${dec}` : formatted;
               })()}
               onChange={(e) => {
@@ -215,7 +222,7 @@ export default function AddBillPage() {
             <DrawerTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-2.5 text-sm transition-colors hover:bg-secondary/50"
+                className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-3.5 text-sm transition-colors hover:bg-secondary/50"
               >
                 {dueDate ? (
                   <span>{formatDisplayDate(dueDate)}</span>
@@ -231,11 +238,13 @@ export default function AddBillPage() {
                   Due Date
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="flex flex-col items-center px-4 pb-6">
+              <div className="flex flex-col items-center px-4 pb-10">
                 <Calendar
                   mode="single"
+                  required
                   selected={dueDate}
                   onSelect={handleSelectDate}
+                  defaultMonth={dueDate}
                   className="w-full bg-transparent [--cell-size:--spacing(11)]"
                   classNames={{
                     month_caption:
@@ -251,7 +260,7 @@ export default function AddBillPage() {
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="mt-2 w-full py-2 text-center text-sm text-destructive"
+                    className="mt-2 w-full py-3 text-center text-sm text-destructive"
                   >
                     Cancel
                   </button>
@@ -271,7 +280,7 @@ export default function AddBillPage() {
             <DrawerTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-2.5 text-sm transition-colors hover:bg-secondary/50"
+                className="flex w-full items-center justify-between rounded-lg border border-input bg-transparent px-4 py-3.5 text-sm transition-colors hover:bg-secondary/50"
               >
                 {billType ? (
                   <span className="flex items-center gap-2.5">
@@ -294,7 +303,7 @@ export default function AddBillPage() {
                   Select Bill Type
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-6">
+              <div className="px-4 pb-10">
                 <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
                   {BILL_TYPES.map((type) => {
                     const isActive = billType?.label === type.label;
@@ -337,7 +346,7 @@ export default function AddBillPage() {
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="mt-4 w-full py-2 text-center text-sm text-destructive"
+                    className="mt-4 w-full py-3 text-center text-sm text-destructive"
                   >
                     Cancel
                   </button>
@@ -354,7 +363,7 @@ export default function AddBillPage() {
                   Custom Bill Type
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-6">
+              <div className="px-4 pb-10">
                 {/* Emoji picker toggle */}
                 <div className="mb-4 flex flex-col items-center">
                   <button
@@ -478,7 +487,7 @@ export default function AddBillPage() {
                 <button
                   type="button"
                   onClick={() => setCustomDrawerOpen(false)}
-                  className="mt-3 w-full py-2 text-center text-sm text-destructive"
+                  className="mt-3 w-full py-3 text-center text-sm text-destructive"
                 >
                   Cancel
                 </button>
@@ -509,7 +518,7 @@ export default function AddBillPage() {
           </Label>
           <Textarea
             id="notes"
-            placeholder="Any reminders about this bill..."
+            placeholder={billType ? getNotesPlaceholder(billType.label) : "Any reminders about this bill..."}
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -535,11 +544,12 @@ export default function AddBillPage() {
                 Has this bill already been paid?
               </p>
             </DrawerHeader>
-            <div className="px-4 pb-6 space-y-2">
-              <Button className="w-full" onClick={handleAddAsPaid}>
+            <div className="px-4 pb-10 space-y-3">
+              <Button size="lg" className="w-full" onClick={handleAddAsPaid}>
                 Yes, mark as paid
               </Button>
               <Button
+                size="lg"
                 variant="outline"
                 className="w-full"
                 onClick={handleAddAsUnpaid}

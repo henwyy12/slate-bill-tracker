@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, LogOut, Search } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useProfile, CURRENCIES } from "@/lib/use-profile";
+import { supabase } from "@/lib/supabase";
 import type { Currency } from "@/lib/currencies";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
 
-type EditingField = "name" | "email" | "currency" | null;
+type EditingField = "name" | "currency" | null;
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -38,8 +39,8 @@ export default function SettingsPage() {
 
   const currentCountry = CURRENCIES.find((c) => c.code === profile?.country) ?? CURRENCIES[0];
 
-  function startEdit(field: "name" | "email") {
-    setEditValue(field === "name" ? (profile?.name ?? "") : (profile?.email ?? ""));
+  function startEdit(field: "name") {
+    setEditValue(profile?.name ?? "");
     setEditing(field);
   }
 
@@ -58,9 +59,6 @@ export default function SettingsPage() {
       }
       setProfile({ ...profile, name: editValue.trim() });
       toast.success("Name updated");
-    } else if (editing === "email") {
-      setProfile({ ...profile, email: editValue.trim() || undefined });
-      toast.success("Email updated");
     }
 
     setEditing(null);
@@ -137,48 +135,6 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Email */}
-        <div className="border-b border-border px-5 py-5">
-          {editing === "email" ? (
-            <div>
-              <p className="text-sm font-medium">Email</p>
-              <Input
-                autoFocus
-                type="email"
-                placeholder="you@example.com"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); }}
-                className="mt-2"
-              />
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={saveEdit}>
-                  Save
-                </Button>
-                <Button size="sm" variant="ghost" onClick={cancelEdit}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="mt-0.5 text-sm">
-                  {profile?.email || <span className="text-muted-foreground">Not provided</span>}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => startEdit("email")}
-                className="text-sm font-semibold underline underline-offset-2"
-              >
-                {profile?.email ? "Edit" : "Add"}
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Currency */}
         <div className="border-b border-border px-5 py-5">
           <div className="flex items-start justify-between">
@@ -203,7 +159,7 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Account</p>
-                <p className="mt-0.5 text-sm">{user.email}</p>
+                <p className="mt-0.5 select-text text-sm">{user.email}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">Bills synced to cloud</p>
               </div>
               <button
@@ -224,7 +180,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={signInWithGoogle}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-sm font-medium text-background transition-transform active:scale-[0.98]"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 text-sm font-medium text-background transition-transform active:scale-[0.98]"
               >
                 <svg className="size-4" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -236,6 +192,27 @@ export default function SettingsPage() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Reset */}
+        <div className="px-5 py-5">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("This will permanently delete all your data. Continue?")) return;
+              if (user) {
+                await Promise.all([
+                  supabase.from("bills").delete().eq("user_id", user.id),
+                  supabase.from("profiles").delete().eq("id", user.id),
+                ]);
+              }
+              localStorage.clear();
+              router.replace("/onboarding");
+            }}
+            className="text-sm text-destructive/60 transition-colors active:text-destructive"
+          >
+            Reset all data
+          </button>
         </div>
       </div>
 
@@ -257,7 +234,7 @@ export default function SettingsPage() {
               className="w-full rounded-xl bg-secondary/50 py-3 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground/50 focus:bg-secondary transition-colors"
             />
           </div>
-          <div className="max-h-[50vh] overflow-y-auto px-4 pb-6">
+          <div className="max-h-[50vh] overflow-y-auto px-4 pb-10">
             <div className="space-y-1.5">
               {filteredCurrencies.map((country) => {
                 const isActive = currentCountry.code === country.code;

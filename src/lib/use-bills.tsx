@@ -12,6 +12,7 @@ import type { Bill } from "./types";
 import { todayISO } from "./utils";
 import { supabase } from "./supabase";
 import { useAuth } from "./use-auth";
+import { toast } from "sonner";
 
 const STORAGE_KEY = "slate-bills";
 const UPCOMING_DAYS = 7;
@@ -99,7 +100,8 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
                 is_recurring: b.isRecurring,
                 notes: b.notes || null,
               }));
-              supabase.from("bills").upsert(rows).then(() => {
+              supabase.from("bills").upsert(rows).then(({ error: syncError }) => {
+                if (syncError) toast.error("Failed to sync bills to cloud");
                 setBills(localBills);
                 setSyncing(false);
               });
@@ -109,6 +111,7 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
               setSyncing(false);
             }
           } else {
+            if (error) toast.error("Failed to load bills from cloud");
             setBills(loadBills());
             setSyncing(false);
           }
@@ -127,7 +130,10 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
 
   const addBill = useCallback(
     (bill: Omit<Bill, "id">) => {
-      const newBill: Bill = { ...bill, id: crypto.randomUUID() };
+      const id = typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      const newBill: Bill = { ...bill, id };
       setBills((prev) => [...prev, newBill]);
 
       if (user) {
@@ -143,6 +149,8 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
           paid_at: newBill.paidAt || null,
           is_recurring: newBill.isRecurring,
           notes: newBill.notes || null,
+        }).then(({ error }) => {
+          if (error) toast.error("Failed to save bill to cloud");
         });
       }
     },
@@ -169,7 +177,10 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
         if (updates.isRecurring !== undefined) dbUpdates.is_recurring = updates.isRecurring;
         if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
 
-        supabase.from("bills").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+        supabase.from("bills").update(dbUpdates).eq("id", id).eq("user_id", user.id)
+          .then(({ error }) => {
+            if (error) toast.error("Failed to update bill");
+          });
       }
     },
     [user]
@@ -202,7 +213,10 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
               updated_at: new Date().toISOString(),
             })
             .eq("id", id)
-            .eq("user_id", user.id);
+            .eq("user_id", user.id)
+            .then(({ error }) => {
+              if (error) toast.error("Failed to update payment status");
+            });
         }
       }
     },
@@ -214,7 +228,10 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
       setBills((prev) => prev.filter((b) => b.id !== id));
 
       if (user) {
-        supabase.from("bills").delete().eq("id", id).eq("user_id", user.id);
+        supabase.from("bills").delete().eq("id", id).eq("user_id", user.id)
+          .then(({ error }) => {
+            if (error) toast.error("Failed to delete bill from cloud");
+          });
       }
     },
     [user]

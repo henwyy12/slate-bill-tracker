@@ -15,7 +15,7 @@ export function SummaryHeader({
   overdueCount: number;
   upcomingCount: number;
 }) {
-  const { profile, currencySymbol, locale } = useProfile();
+  const { profile, currencySymbol } = useProfile();
   const greeting = getGreeting();
   const initials = profile?.name?.charAt(0).toUpperCase() ?? "?";
 
@@ -31,7 +31,7 @@ export function SummaryHeader({
           <div className="mt-2 flex items-baseline gap-1">
             <span className="font-heading text-base text-muted-foreground">{currencySymbol}</span>
             <h1 className="font-heading text-5xl">
-              <AnimatedCounter value={totalDue} formatter={(n) => formatAmount(n, locale)} />
+              <AnimatedCounter value={totalDue} formatter={(n) => formatAmount(n)} />
             </h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">total due</p>

@@ -5,6 +5,7 @@ import type { Bill } from "@/lib/types";
 import { useBills } from "@/lib/use-bills";
 import { cn, formatAmount, formatShortDate, todayISO } from "@/lib/utils";
 import { useProfile } from "@/lib/use-profile";
+import { toast } from "sonner";
 import { Check, Trash2, RotateCw, Pencil } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate } from "motion/react";
 import {
@@ -24,13 +25,63 @@ const BillEditForm = lazy(() =>
   })),
 );
 
+const PAID_QUIPS = [
+  "🎉 One down, you got this!",
+  "✅ Bill slayed",
+  "💪 Look at you being responsible",
+  "🔥 Money moves",
+  "🫡 Paid and accounted for",
+  "💸 Gone but not forgotten",
+  "🏆 Bill destroyer",
+  "🧾 Receipt energy",
+  "👏 Adulting level: expert",
+  "🥂 Cheers to fewer bills",
+  "💅 Paid like a boss",
+  "🚀 One less thing to worry about",
+  "🎯 Bullseye, bill paid",
+  "⭐ Financial glow-up",
+  "🫶 Your wallet thanks you",
+  "🧹 Clean sweep",
+  "💰 Smart money right here",
+  "😮‍💨 Relief unlocked",
+  "🙌 Debt? Don't know her",
+  "🐐 GOAT behavior",
+];
+
+const UNPAID_QUIPS = [
+  "😬 Back to the pile it goes",
+  "🫠 Plot twist: still owe it",
+  "💀 Bill resurrection",
+  "🔄 The return of the bill",
+  "😅 Undo vibes",
+  "🫣 Pretend that didn't happen",
+  "🪃 It came back",
+  "🧟 Zombie bill",
+  "👀 The bill remembers",
+  "🎬 Bill 2: The Sequel",
+  "😭 Back from the dead",
+  "🫥 Like it never happened",
+  "🤡 Clown moment",
+  "📉 Financial plot twist",
+  "🙃 Well that was fun while it lasted",
+  "💔 Paid status revoked",
+  "🐛 That was a bug, right?",
+  "🌀 Deja vu",
+  "🪦 Unrest in peace",
+  "😤 The audacity of this bill",
+];
+
+function pickRandom(arr: readonly string[]) {
+  return arr[Math.floor(Math.random() * arr.length)]!;
+}
+
 function isOverdue(bill: Bill): boolean {
   return !bill.isPaid && bill.dueDate < todayISO();
 }
 
 export function BillCard({ bill }: { bill: Bill }) {
   const { togglePaid, deleteBill } = useBills();
-  const { currencySymbol, locale } = useProfile();
+  const { currencySymbol } = useProfile();
   const overdue = isOverdue(bill);
 
   const [detailOpen, setDetailOpen] = useState(false);
@@ -107,7 +158,15 @@ export function BillCard({ bill }: { bill: Bill }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                const wasPaid = bill.isPaid;
                 togglePaid(bill.id);
+                toast(pickRandom(wasPaid ? UNPAID_QUIPS : PAID_QUIPS), {
+                  duration: 3000,
+                  style: {
+                    background: "var(--foreground)",
+                    color: "var(--background)",
+                  },
+                });
               }}
               className={cn(
                 "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -135,7 +194,7 @@ export function BillCard({ bill }: { bill: Bill }) {
                     bill.isPaid && "text-muted-foreground",
                   )}
                 >
-                  {currencySymbol}{formatAmount(bill.amount, locale)}
+                  {currencySymbol} {formatAmount(bill.amount)}
                 </p>
               </div>
 
@@ -199,9 +258,9 @@ export function BillCard({ bill }: { bill: Bill }) {
                   </DrawerDescription>
                 </DrawerHeader>
 
-                <div className="px-6 pb-2 pt-2">
+                <div className="px-6 pb-10 pt-2">
                   <p className="text-center font-heading text-4xl">
-                    {currencySymbol}{formatAmount(bill.amount, locale)}
+                    {currencySymbol} {formatAmount(bill.amount)}
                   </p>
 
                   <div className="mt-5 space-y-3 rounded-xl bg-secondary/40 p-4">
@@ -252,11 +311,11 @@ export function BillCard({ bill }: { bill: Bill }) {
                   </div>
 
                   {bill.notes && (
-                    <div className="mt-4">
-                      <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    <div className="mt-3 rounded-xl bg-secondary/40 p-4">
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
                         Notes
                       </p>
-                      <p className="rounded-xl bg-secondary/40 p-3 text-sm whitespace-pre-wrap">
+                      <p className="text-sm whitespace-pre-wrap">
                         {bill.notes}
                       </p>
                     </div>
@@ -266,6 +325,7 @@ export function BillCard({ bill }: { bill: Bill }) {
                 {!bill.isPaid && (
                   <DrawerFooter>
                     <Button
+                      size="lg"
                       variant="outline"
                       onClick={() => setEditing(true)}
                       className="w-full gap-2"
@@ -292,7 +352,11 @@ export function BillCard({ bill }: { bill: Bill }) {
                 >
                   <BillEditForm
                     bill={bill}
-                    onDone={() => setEditing(false)}
+                    onDone={() => {
+                      setEditing(false);
+                      setDetailOpen(false);
+                      toast.success("Bill saved");
+                    }}
                   />
                 </Suspense>
               </motion.div>
@@ -306,16 +370,17 @@ export function BillCard({ bill }: { bill: Bill }) {
         <Drawer open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle className="text-center">
+              <DrawerTitle className="text-center font-semibold [font-family:inherit]">
                 Delete this bill?
               </DrawerTitle>
               <DrawerDescription className="text-center">
-                &ldquo;{bill.name}&rdquo; for {currencySymbol}{formatAmount(bill.amount, locale)} will
+                &ldquo;{bill.name}&rdquo; for {currencySymbol} {formatAmount(bill.amount)} will
                 be permanently removed.
               </DrawerDescription>
             </DrawerHeader>
             <DrawerFooter>
               <Button
+                size="lg"
                 variant="destructive"
                 onClick={handleConfirmDelete}
                 className="w-full"
@@ -324,6 +389,7 @@ export function BillCard({ bill }: { bill: Bill }) {
               </Button>
               <DrawerClose asChild>
                 <Button
+                  size="lg"
                   variant="outline"
                   className="w-full"
                   onClick={resetSwipe}
