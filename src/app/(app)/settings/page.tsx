@@ -211,12 +211,12 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => router.push("/upgrade")}
-                className="flex w-full items-center justify-between"
+                className="flex w-full items-center justify-between rounded-xl bg-accent/10 p-4 transition-colors active:bg-accent/20"
               >
                 <div className="flex items-center gap-3">
-                  <Sparkles className="size-4 shrink-0 text-accent" />
+                  <Sparkles className="size-5 shrink-0 text-accent" />
                   <div className="text-left">
-                    <p className="text-sm font-semibold">Upgrade to Slate Lifetime</p>
+                    <p className="text-base font-semibold">Upgrade to Slate Lifetime</p>
                     <p className="text-xs text-muted-foreground">Unlimited bills, cloud sync, and more</p>
                   </div>
                 </div>
