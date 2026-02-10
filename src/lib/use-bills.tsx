@@ -21,7 +21,7 @@ interface BillsContextValue {
   bills: Bill[];
   addBill: (bill: Omit<Bill, "id">) => void;
   updateBill: (id: string, updates: Partial<Omit<Bill, "id">>) => void;
-  togglePaid: (id: string) => void;
+  togglePaid: (id: string) => { spawned?: Bill };
   deleteBill: (id: string) => void;
   unpaidBills: Bill[];
   paidBills: Bill[];
@@ -63,6 +63,7 @@ function rowToBill(row: Record<string, unknown>): Bill {
     paidAt: row.paid_at as string | undefined,
     isRecurring: row.is_recurring as boolean,
     notes: (row.notes as string) || undefined,
+    spawnedBillId: (row.spawned_bill_id as string) || undefined,
   };
 }
 
@@ -187,38 +188,120 @@ export function BillsProvider({ children }: { children: React.ReactNode }) {
   );
 
   const togglePaid = useCallback(
-    (id: string) => {
-      setBills((prev) =>
-        prev.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                isPaid: !b.isPaid,
-                paidAt: !b.isPaid ? new Date().toISOString() : undefined,
-              }
-            : b
-        )
-      );
+    (id: string): { spawned?: Bill } => {
+      const bill = bills.find((b) => b.id === id);
+      if (!bill) return {};
 
-      if (user) {
-        // Read current state to determine new value
-        const bill = bills.find((b) => b.id === id);
-        if (bill) {
-          const newPaid = !bill.isPaid;
-          supabase
-            .from("bills")
-            .update({
-              is_paid: newPaid,
-              paid_at: newPaid ? new Date().toISOString() : null,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", id)
-            .eq("user_id", user.id)
-            .then(({ error }) => {
-              if (error) toast.error("Failed to update payment status");
-            });
+      const newPaid = !bill.isPaid;
+      let spawnedBill: Bill | undefined;
+
+      if (newPaid && bill.isRecurring) {
+        // Create next month's copy
+        const nextId = typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
+        // Bump due date by 1 month, clamping day to last day of target month
+        const [y, m, d] = bill.dueDate.split("-").map(Number) as [number, number, number];
+        const target = new Date(y, m, d); // m is already next month (0-indexed: m-1+1)
+        // If day overflowed (e.g. Jan 31 → Mar 3), clamp to last day of intended month
+        if (target.getMonth() !== m % 12) {
+          target.setDate(0); // go back to last day of previous month
+        }
+        const nextDueDate = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
+
+        spawnedBill = {
+          id: nextId,
+          name: bill.name,
+          category: { ...bill.category },
+          amount: bill.amount,
+          dueDate: nextDueDate,
+          isPaid: false,
+          isRecurring: true,
+          notes: bill.notes,
+        };
+
+        setBills((prev) => [
+          ...prev.map((b) =>
+            b.id === id
+              ? { ...b, isPaid: true, paidAt: new Date().toISOString(), spawnedBillId: nextId }
+              : b
+          ),
+          spawnedBill!,
+        ]);
+
+        if (user) {
+          supabase.from("bills").update({
+            is_paid: true,
+            paid_at: new Date().toISOString(),
+            spawned_bill_id: nextId,
+            updated_at: new Date().toISOString(),
+          }).eq("id", id).eq("user_id", user.id).then(({ error }) => {
+            if (error) toast.error("Failed to update payment status");
+          });
+          supabase.from("bills").insert({
+            id: nextId,
+            user_id: user.id,
+            name: spawnedBill!.name,
+            category_label: spawnedBill!.category.label,
+            category_emoji: spawnedBill!.category.emoji,
+            amount: spawnedBill!.amount,
+            due_date: spawnedBill!.dueDate,
+            is_paid: false,
+            is_recurring: true,
+            notes: spawnedBill!.notes || null,
+          }).then(({ error }) => {
+            if (error) toast.error("Failed to create next bill");
+          });
+        }
+      } else if (!newPaid && bill.isRecurring && bill.spawnedBillId) {
+        // Undo: delete the spawned next-month copy
+        const spawnedId = bill.spawnedBillId;
+        setBills((prev) =>
+          prev
+            .filter((b) => b.id !== spawnedId)
+            .map((b) =>
+              b.id === id
+                ? { ...b, isPaid: false, paidAt: undefined, spawnedBillId: undefined }
+                : b
+            )
+        );
+
+        if (user) {
+          supabase.from("bills").update({
+            is_paid: false,
+            paid_at: null,
+            spawned_bill_id: null,
+            updated_at: new Date().toISOString(),
+          }).eq("id", id).eq("user_id", user.id).then(({ error }) => {
+            if (error) toast.error("Failed to update payment status");
+          });
+          supabase.from("bills").delete().eq("id", spawnedId).eq("user_id", user.id).then(({ error }) => {
+            if (error) toast.error("Failed to remove next bill");
+          });
+        }
+      } else {
+        // Non-recurring: simple toggle
+        setBills((prev) =>
+          prev.map((b) =>
+            b.id === id
+              ? { ...b, isPaid: newPaid, paidAt: newPaid ? new Date().toISOString() : undefined }
+              : b
+          )
+        );
+
+        if (user) {
+          supabase.from("bills").update({
+            is_paid: newPaid,
+            paid_at: newPaid ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          }).eq("id", id).eq("user_id", user.id).then(({ error }) => {
+            if (error) toast.error("Failed to update payment status");
+          });
         }
       }
+
+      return { spawned: spawnedBill };
     },
     [user, bills]
   );

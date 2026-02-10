@@ -20,4 +20,5 @@ export interface Bill {
   paidAt?: string;
   isRecurring: boolean;
   notes?: string;
+  spawnedBillId?: string;
 }

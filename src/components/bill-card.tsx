@@ -159,8 +159,11 @@ export function BillCard({ bill }: { bill: Bill }) {
               onClick={(e) => {
                 e.stopPropagation();
                 const wasPaid = bill.isPaid;
-                togglePaid(bill.id);
-                toast(pickRandom(wasPaid ? UNPAID_QUIPS : PAID_QUIPS), {
+                const { spawned } = togglePaid(bill.id);
+                const message = spawned
+                  ? `🔄 Next bill created for ${formatShortDate(spawned.dueDate)}`
+                  : pickRandom(wasPaid ? UNPAID_QUIPS : PAID_QUIPS);
+                toast(message, {
                   duration: 3000,
                   style: {
                     background: "var(--foreground)",
