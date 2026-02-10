@@ -15,7 +15,7 @@ export { CURRENCIES } from "./currencies";
 
 const STORAGE_KEY = "slate-profile";
 
-export const FREE_BILL_LIMIT = 1; // TODO: change back to 8 before shipping
+export const FREE_BILL_LIMIT = 8;
 
 interface ProfileContextValue {
   profile: UserProfile | null;

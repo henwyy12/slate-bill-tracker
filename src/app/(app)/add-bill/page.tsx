@@ -238,7 +238,7 @@ export default function AddBillPage() {
                   Due Date
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="flex flex-col items-center px-4 pb-10">
+              <div className="flex flex-col items-center px-4 pb-10" data-vaul-no-drag>
                 <Calendar
                   mode="single"
                   required
@@ -304,7 +304,7 @@ export default function AddBillPage() {
                 </DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-10">
-                <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
+                <div className="max-h-[50vh] space-y-1.5 overflow-y-auto" data-vaul-no-drag>
                   {BILL_TYPES.map((type) => {
                     const isActive = billType?.label === type.label;
                     return (
@@ -402,6 +402,7 @@ export default function AddBillPage() {
                     <div
                       ref={emojiGridRef}
                       className="max-h-52 overflow-y-auto"
+                      data-vaul-no-drag
                     >
                       {emojiSearch.trim() ? (
                         // Flat filtered results

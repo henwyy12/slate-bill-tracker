@@ -114,7 +114,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
         </DrawerTitle>
       </DrawerHeader>
 
-      <div className="max-h-[50vh] space-y-5 overflow-y-auto px-5 pb-2">
+      <div className="max-h-[50vh] space-y-5 overflow-y-auto px-5 pb-2" data-vaul-no-drag>
         {/* Amount */}
         <div className="flex flex-col items-center">
           <p className="mb-2 text-sm text-muted-foreground">Amount</p>
@@ -188,7 +188,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                   Due Date
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="flex flex-col items-center px-4 pb-10">
+              <div className="flex flex-col items-center px-4 pb-10" data-vaul-no-drag>
                 <Calendar
                   mode="single"
                   required
@@ -244,7 +244,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                 </DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-10">
-                <div className="max-h-[50vh] space-y-1.5 overflow-y-auto">
+                <div className="max-h-[50vh] space-y-1.5 overflow-y-auto" data-vaul-no-drag>
                   {BILL_TYPES.map((type) => {
                     const isActive = editBillType.label === type.label;
                     return (
@@ -335,6 +335,7 @@ export function BillEditForm({ bill, onDone }: BillEditFormProps) {
                     <div
                       ref={emojiGridRef}
                       className="max-h-52 overflow-y-auto"
+                      data-vaul-no-drag
                     >
                       {emojiSearch.trim() ? (
                         filteredEmojis.length > 0 ? (

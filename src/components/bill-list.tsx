@@ -173,7 +173,7 @@ export function BillList() {
                 </p>
               </div>
 
-              <div className="max-h-[50vh] overflow-y-auto px-5 pb-10 pt-3">
+              <div className="max-h-[50vh] overflow-y-auto px-5 pb-10 pt-3" data-vaul-no-drag>
                 <div className="space-y-3">
                   {selectedMonth.bills.map((bill) => (
                     <BillCard key={bill.id} bill={bill} />

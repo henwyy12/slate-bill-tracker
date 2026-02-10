@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, LogOut, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { useProfile, CURRENCIES } from "@/lib/use-profile";
+import { usePurchase } from "@/lib/use-purchase";
 import { supabase } from "@/lib/supabase";
 import type { Currency } from "@/lib/currencies";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,8 @@ type EditingField = "name" | "currency" | null;
 export default function SettingsPage() {
   const router = useRouter();
   const { user, signInWithGoogle, signOut } = useAuth();
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile, isPro } = useProfile();
+  const { restorePurchases, loading: purchaseLoading } = usePurchase();
 
   const [editing, setEditing] = useState<EditingField>(null);
   const [editValue, setEditValue] = useState("");
@@ -194,6 +196,44 @@ export default function SettingsPage() {
           )}
         </div>
 
+        {/* Upgrade / Pro status */}
+        <div className="border-b border-border px-5 py-5">
+          {isPro ? (
+            <div className="flex items-center gap-3">
+              <Sparkles className="size-4 shrink-0 text-accent" />
+              <div>
+                <p className="text-sm font-semibold">Slate Lifetime</p>
+                <p className="text-xs text-muted-foreground">You have full access</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => router.push("/upgrade")}
+                className="flex w-full items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="size-4 shrink-0 text-accent" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold">Upgrade to Slate Lifetime</p>
+                    <p className="text-xs text-muted-foreground">Unlimited bills, cloud sync, and more</p>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                disabled={purchaseLoading}
+                onClick={restorePurchases}
+                className="text-sm text-muted-foreground underline underline-offset-2 disabled:opacity-50"
+              >
+                Restore purchases
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Reset */}
         <div className="px-5 py-5">
           <button
@@ -234,7 +274,7 @@ export default function SettingsPage() {
               className="w-full rounded-xl bg-secondary/50 py-3 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground/50 focus:bg-secondary transition-colors"
             />
           </div>
-          <div className="max-h-[50vh] overflow-y-auto px-4 pb-10">
+          <div className="max-h-[50vh] overflow-y-auto px-4 pb-10" data-vaul-no-drag>
             <div className="space-y-1.5">
               {filteredCurrencies.map((country) => {
                 const isActive = currentCountry.code === country.code;

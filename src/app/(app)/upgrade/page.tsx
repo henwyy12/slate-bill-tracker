@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { useBills } from "@/lib/use-bills";
 import { useProfile, FREE_BILL_LIMIT } from "@/lib/use-profile";
+import { usePurchase } from "@/lib/use-purchase";
 import { Button } from "@/components/ui/button";
 
 export default function UpgradePage() {
   const router = useRouter();
   const { bills } = useBills();
   const { isPro } = useProfile();
+  const { purchasePro, restorePurchases, loading } = usePurchase();
 
   // If already pro, redirect home
   if (isPro) {
@@ -94,13 +96,21 @@ export default function UpgradePage() {
           <Button
             className="mt-4 w-full"
             size="lg"
-            onClick={() => {
-              // TODO: Apple In-App Purchase via StoreKit
-            }}
+            disabled={loading}
+            onClick={purchasePro}
           >
-            Upgrade to Lifetime
+            {loading ? "Processing..." : "Upgrade to Lifetime"}
           </Button>
         </div>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={restorePurchases}
+          className="mt-4 w-full text-center text-sm text-muted-foreground underline underline-offset-2 disabled:opacity-50"
+        >
+          Restore purchases
+        </button>
       </div>
     </div>
   );
